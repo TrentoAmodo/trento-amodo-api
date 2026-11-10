@@ -4,15 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-This is a freshly scaffolded ASP.NET Core Web API (default `dotnet new webapi` template, controller-based) targeting .NET 10. There is no solution (`.sln`) file — the project is built/run directly via its `.csproj`. The only endpoint is the template's example `WeatherForecastController`; no real domain logic, database, or authentication has been added yet.
+This is a freshly scaffolded ASP.NET Core Web API (default `dotnet new webapi` template, controller-based) targeting .NET 10. The only endpoint is the template's example `WeatherForecastController`; no real domain logic, database, or authentication has been added yet.
 
 ## Commands
 
-All commands run from `src/TrentoAmodo.Api/` (or pass `--project src/TrentoAmodo.Api` from the repo root).
+The repo root holds `TrentoAmodo.Api.slnx`, the solution file (the new XML-based `.slnx` format, .NET 10's default). Commands can run either from the repo root against the solution, or from `src/TrentoAmodo.Api/` against the project directly.
 
-- Build: `dotnet build`
-- Run (default profile, HTTPS + HTTP, ports 7288/5121): `dotnet run`
-- Run (HTTP only, port 5121): `dotnet run --launch-profile http`
+- Build: `dotnet build` (from repo root, builds the solution) or `dotnet build` (from `src/TrentoAmodo.Api/`)
+- Run (default profile, HTTPS + HTTP, ports 7288/5121): `dotnet run --project src/TrentoAmodo.Api` (from repo root) or `dotnet run` (from `src/TrentoAmodo.Api/`)
+- Run (HTTP only, port 5121): add `--launch-profile http`
 - Restore packages: `dotnet restore`
 
 There are no test projects and no lint/format configs in the repo yet.

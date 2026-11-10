@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TrentoAmodo.Api/TrentoAmodo.Api.csproj" />
+  </Folder>
+</Solution>
