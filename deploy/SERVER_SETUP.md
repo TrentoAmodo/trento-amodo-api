@@ -34,28 +34,35 @@ mkdir -p /var/www/trento-amodo-api/releases
 chown -R tam-deploy:tam-deploy /var/www/trento-amodo-api
 ```
 
-## 4. Enable lingering for tam-deploy
+## 4. Install the systemd service
 
-Required so the user-level systemd service keeps running (and starts at boot)
-without an active SSH session:
-
-```sh
-loginctl enable-linger tam-deploy
-```
-
-## 5. Install the systemd user service
-
-As `tam-deploy`:
+This is a system-level unit (`/etc/systemd/system/...`), not a user-level one:
+in LXC/Docker containers `systemctl --user` / lingering / the logind D-Bus
+session are often broken or disabled ("Failed to connect to bus: No medium
+found"), while the system-level systemd instance (PID 1) works normally. The
+unit itself runs the process unprivileged, as `tam-deploy` (`User=tam-deploy`
+in the unit file).
 
 ```sh
-mkdir -p ~/.config/systemd/user
-cp deploy/systemd/trento-amodo-api.service ~/.config/systemd/user/
-systemctl --user daemon-reload
-systemctl --user enable trento-amodo-api
+cp deploy/systemd/trento-amodo-api.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable trento-amodo-api
 ```
 
 The service will keep restarting (`Restart=always`) until the first deploy
 creates the `current` symlink.
+
+## 5. Allow tam-deploy to restart the service without a password
+
+The deploy workflow restarts the service over SSH as `tam-deploy`, which has
+no root access otherwise. Grant only this one command, via `visudo`:
+
+```sh
+echo 'tam-deploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart trento-amodo-api' \
+  | tee /etc/sudoers.d/tam-deploy-trento-amodo-api
+chmod 440 /etc/sudoers.d/tam-deploy-trento-amodo-api
+visudo -c
+```
 
 ## 6. Install and configure nginx
 

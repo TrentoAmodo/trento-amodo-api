@@ -3,6 +3,8 @@ Description=Trento Amodo API (staging)
 After=network.target
 
 [Service]
+User=tam-deploy
+Group=tam-deploy
 WorkingDirectory=/var/www/trento-amodo-api/current
 ExecStart=/usr/bin/dotnet /var/www/trento-amodo-api/current/TrentoAmodo.Api.dll
 Restart=always
@@ -12,4 +14,4 @@ Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
 SyslogIdentifier=trento-amodo-api
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target

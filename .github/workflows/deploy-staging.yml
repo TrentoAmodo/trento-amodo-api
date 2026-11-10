@@ -69,7 +69,7 @@ jobs:
             rm -f "/tmp/${{ env.ARTIFACT_NAME }}"
 
             ln -sfn "$RELEASE_DIR" "$BASE_PATH/current"
-            systemctl --user restart "${{ env.SERVICE_NAME }}"
+            sudo /usr/bin/systemctl restart "${{ env.SERVICE_NAME }}"
 
             cd "$BASE_PATH/releases"
             ls -1dt */ | tail -n +6 | xargs -r rm -rf
