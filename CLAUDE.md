@@ -19,8 +19,15 @@ There are no test projects and no lint/format configs in the repo yet.
 
 ## Architecture
 
-- `Program.cs` — minimal hosting model entry point. Registers MVC controllers (`AddControllers`) and Microsoft's native OpenAPI generator (`AddOpenApi`/`MapOpenApi`, document exposed only in Development at `/openapi/v1.json`). Note: there is no Swagger/Swashbuckle UI — only the raw OpenAPI JSON document is served.
+- `Program.cs` — minimal hosting model entry point. Registers MVC controllers (`AddControllers`) and Swashbuckle (`AddSwaggerGen`/`UseSwagger`/`UseSwaggerUI`), with the Swagger UI exposed only in Development at `/swagger`.
 - `Controllers/` — one controller per route group, following standard ASP.NET Core MVC conventions (`[ApiController]`, `[Route("[controller]")]`).
 - `appsettings.json` / `appsettings.Development.json` — standard layered configuration; no external services or connection strings configured.
 - `Properties/launchSettings.json` — defines two launch profiles, `http` and `https`, used by `dotnet run --launch-profile <name>`.
 - `TrentoAmodo.Api.http` — manual HTTP request file (usable with the VS Code/Rider HTTP client) for exercising endpoints during development.
+
+## Conventions
+
+- **Conventional Commits** and **Conventional Branch** naming are required for all commits and branches (e.g. `feat:`, `fix:`, `chore:`; branches like `feature/...`, `fix/...`).
+- **English only**: all user-visible text — code, comments, strings, commit messages, branch names, PR descriptions, docs — must be in English, with no exceptions.
+- **Never push** to a remote unless explicitly asked to in that moment; a prior push approval does not carry over.
+- **Design-first**: this project targets a hexagonal architecture (ports and adapters) as much as possible. Keep domain/application logic independent of infrastructure (ASP.NET Core, EF Core, external services), expose ports from the core and implement adapters around them. Never take a shortcut without asking first.
