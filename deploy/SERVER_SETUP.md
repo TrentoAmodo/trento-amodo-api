@@ -64,7 +64,31 @@ chmod 440 /etc/sudoers.d/tam-deploy-trento-amodo-api
 visudo -c
 ```
 
-## 6. Install and configure nginx
+## 6. Open inbound ports in the cloud firewall
+
+This server runs on Oracle Cloud (OCI): besides the local `iptables` rules
+below, the VCN's Security List (or NSG, if the instance uses one instead)
+must also allow the traffic, or it never reaches the instance at all.
+
+In the OCI console, under the instance's VCN → Security Lists (or the
+attached NSG), add ingress rules for TCP `80` and `443`, source `0.0.0.0/0`.
+
+**Set `Source Port Range` to `All`, not to `80`/`443`.** That field filters
+the *client's* source port, which is always an ephemeral port, never 80/443
+— setting it to match the destination port silently blocks all real
+traffic while looking correctly configured.
+
+Then allow the same ports in the instance's local firewall (these images
+preconfigure `iptables` to only allow SSH):
+
+```sh
+iptables -I INPUT 5 -p tcp --dport 80 -m state --state NEW -j ACCEPT
+iptables -I INPUT 6 -p tcp --dport 443 -m state --state NEW -j ACCEPT
+iptables -L INPUT -n --line-numbers   # confirm both ACCEPT rules sit before the REJECT catch-all
+netfilter-persistent save
+```
+
+## 7. Install and configure nginx
 
 ```sh
 apt install nginx
@@ -73,11 +97,34 @@ ln -s /etc/nginx/sites-available/trento-amodo-api.conf /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 ```
 
-## 7. (Later) Enable TLS
+## 8. Enable TLS
 
 ```sh
+apt install -y certbot python3-certbot-nginx
 certbot --nginx -d trento-amodo-api.briansivieri.com
 ```
+
+Certbot rewrites `/etc/nginx/sites-available/trento-amodo-api.conf` in place
+(adds the `443 ssl` server block and an HTTP→HTTPS redirect) — keep
+`deploy/nginx/trento-amodo-api.conf` in the repo in sync with whatever it
+produces. Renewal is handled by a systemd timer already installed with the
+package; confirm it with:
+
+```sh
+systemctl list-timers | grep certbot
+certbot renew --dry-run
+```
+
+Traffic for this domain is proxied through Cloudflare. Validation uses the
+HTTP-01 challenge over plain port 80, which Cloudflare forwards to the
+origin unmodified regardless of the SSL/TLS encryption mode — so renewals
+keep working automatically as long as port 80 stays reachable from
+Cloudflare to the origin (steps 6–7 above).
+
+If Cloudflare's SSL/TLS encryption mode (dashboard → SSL/TLS → Overview) is
+**Full (strict)**, this step is required for HTTPS visitors to reach the
+origin at all: Cloudflare only accepts a publicly trusted certificate on the
+origin, and Let's Encrypt qualifies.
 
 ## GitHub secrets required
 
