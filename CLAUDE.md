@@ -11,8 +11,8 @@ This is a freshly scaffolded ASP.NET Core Web API (default `dotnet new webapi` t
 All commands run from `src/TrentoAmodo.Api/` (or pass `--project src/TrentoAmodo.Api` from the repo root).
 
 - Build: `dotnet build`
+- Run (default profile, HTTPS + HTTP, ports 7288/5121): `dotnet run`
 - Run (HTTP only, port 5121): `dotnet run --launch-profile http`
-- Run (HTTPS + HTTP, ports 7288/5121): `dotnet run --launch-profile https`
 - Restore packages: `dotnet restore`
 
 There are no test projects and no lint/format configs in the repo yet.
