@@ -19,7 +19,7 @@ There are no test projects and no lint/format configs in the repo yet.
 
 ## Architecture
 
-- `Program.cs` — minimal hosting model entry point. Registers MVC controllers (`AddControllers`) and Swashbuckle (`AddSwaggerGen`/`UseSwagger`/`UseSwaggerUI`), with the Swagger UI exposed only in Development at `/swagger`.
+- `Program.cs` — minimal hosting model entry point. Registers MVC controllers (`AddControllers`) and Swashbuckle (`AddSwaggerGen`/`UseSwagger`/`UseSwaggerUI`), with the Swagger UI exposed in every environment at `/swagger`.
 - `Controllers/` — one controller per route group, following standard ASP.NET Core MVC conventions (`[ApiController]`, `[Route("[controller]")]`).
 - `appsettings.json` / `appsettings.Development.json` — standard layered configuration; no external services or connection strings configured.
 - `Properties/launchSettings.json` — defines two launch profiles, `http` and `https`, used by `dotnet run --launch-profile <name>`.
