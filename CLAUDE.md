@@ -27,6 +27,7 @@ There are no test projects and no lint/format configs in the repo yet.
 
 ## Conventions
 
+- **Branching**: `main` only ever receives merges from `development` and exists to trigger staging deploy (`.github/workflows/deploy-staging.yml` runs on every push to `main`). Day-to-day work (small fixes, docs, config tweaks) happens as direct commits on `development`; only non-trivial work gets its own `feature/...`/`fix/...` branch off `development`, merged back when done. When ready to deploy, merge `development` into `main`.
 - **Conventional Commits** and **Conventional Branch** naming are required for all commits and branches (e.g. `feat:`, `fix:`, `chore:`; branches like `feature/...`, `fix/...`).
 - **English only**: all user-visible text — code, comments, strings, commit messages, branch names, PR descriptions, docs — must be in English, with no exceptions.
 - **Never push** to a remote unless explicitly asked to in that moment; a prior push approval does not carry over.
