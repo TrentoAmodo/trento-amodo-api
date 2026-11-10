@@ -1,0 +1,77 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [main]
+
+env:
+  PROJECT_PATH: src/TrentoAmodo.Api
+  ARTIFACT_NAME: release.tar.gz
+  DEPLOY_USER: tam-deploy
+  DEPLOY_BASE_PATH: /var/www/trento-amodo-api
+  SERVICE_NAME: trento-amodo-api
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      # Human-readable and monotonically increasing: date + run number.
+      - name: Compute release version
+        id: version
+        run: echo "value=$(date -u +%Y%m%d)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Publish
+        run: >
+          dotnet publish "${{ env.PROJECT_PATH }}"
+          -c Release
+          --no-self-contained
+          -p:UseAppHost=false
+          -o publish
+
+      - name: Create release archive
+        run: tar -czf "${{ env.ARTIFACT_NAME }}" -C publish .
+
+      - name: Upload archive to staging server
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.T55_STAGING_DEPLOY_HOST }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.T55_STAGING_DEPLOY_KEY }}
+          source: ${{ env.ARTIFACT_NAME }}
+          target: /tmp
+
+      - name: Release on staging server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.T55_STAGING_DEPLOY_HOST }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.T55_STAGING_DEPLOY_KEY }}
+          script: |
+            set -euo pipefail
+
+            VERSION="${{ steps.version.outputs.value }}"
+            BASE_PATH="${{ env.DEPLOY_BASE_PATH }}"
+            RELEASE_DIR="$BASE_PATH/releases/$VERSION"
+
+            mkdir -p "$RELEASE_DIR"
+            tar -xzf "/tmp/${{ env.ARTIFACT_NAME }}" -C "$RELEASE_DIR"
+            rm -f "/tmp/${{ env.ARTIFACT_NAME }}"
+
+            ln -sfn "$RELEASE_DIR" "$BASE_PATH/current"
+            systemctl --user restart "${{ env.SERVICE_NAME }}"
+
+            cd "$BASE_PATH/releases"
+            ls -1dt */ | tail -n +6 | xargs -r rm -rf
+
+            echo "Deployed version $VERSION"

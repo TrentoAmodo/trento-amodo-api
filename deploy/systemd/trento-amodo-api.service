@@ -1,0 +1,15 @@
+[Unit]
+Description=Trento Amodo API (staging)
+After=network.target
+
+[Service]
+WorkingDirectory=/var/www/trento-amodo-api/current
+ExecStart=/usr/bin/dotnet /var/www/trento-amodo-api/current/TrentoAmodo.Api.dll
+Restart=always
+RestartSec=5
+Environment=ASPNETCORE_ENVIRONMENT=Staging
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
+SyslogIdentifier=trento-amodo-api
+
+[Install]
+WantedBy=default.target
