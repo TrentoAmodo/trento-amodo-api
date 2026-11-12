@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/TrentoAmodo.Api/TrentoAmodo.Api.csproj" />
+    <Project Path="src/TrentoAmodo.Application/TrentoAmodo.Application.csproj" />
+    <Project Path="src/TrentoAmodo.Domain/TrentoAmodo.Domain.csproj" />
+    <Project Path="src/TrentoAmodo.Infrastructure/TrentoAmodo.Infrastructure.csproj" />
   </Folder>
 </Solution>
