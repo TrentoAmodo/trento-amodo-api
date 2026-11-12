@@ -11,6 +11,7 @@ Restart=always
 RestartSec=5
 Environment=ASPNETCORE_ENVIRONMENT=Staging
 Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
+EnvironmentFile=-/etc/trento-amodo-api/environment
 SyslogIdentifier=trento-amodo-api
 
 [Install]

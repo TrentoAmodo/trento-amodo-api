@@ -126,6 +126,73 @@ If Cloudflare's SSL/TLS encryption mode (dashboard → SSL/TLS → Overview) is
 origin at all: Cloudflare only accepts a publicly trusted certificate on the
 origin, and Let's Encrypt qualifies.
 
+## 9. Install Postgres
+
+```sh
+apt install -y postgresql
+```
+
+By default Postgres listens on `localhost` only (`listen_addresses = 'localhost'`
+in `postgresql.conf`) — unlike step 6, **no firewall changes are needed**: the
+database is never exposed to the Internet, only reachable from the app on the
+same host (or via an SSH tunnel, see below).
+
+Create the database and a dedicated role:
+
+```sh
+sudo -u postgres psql -c "CREATE ROLE trento_amodo WITH LOGIN PASSWORD '<strong-password>';"
+sudo -u postgres createdb -O trento_amodo trento_amodo
+```
+
+Store the connection string outside the repo, in a file that systemd reads
+as an `EnvironmentFile` (the unit file itself, `EnvironmentFile=` line
+included, stays tracked in git — only this file holds the secret):
+
+```sh
+mkdir -p /etc/trento-amodo-api
+cat > /etc/trento-amodo-api/environment <<'EOF'
+ConnectionStrings__Default=Host=localhost;Port=5432;Database=trento_amodo;Username=trento_amodo;Password=<strong-password>
+EOF
+chown tam-deploy:tam-deploy /etc/trento-amodo-api/environment
+chmod 600 /etc/trento-amodo-api/environment
+systemctl daemon-reload
+systemctl restart trento-amodo-api
+```
+
+(The double underscore in `ConnectionStrings__Default` is how ASP.NET Core
+maps a nested config key from an environment variable. The unit file's
+`EnvironmentFile=-/etc/trento-amodo-api/environment` has a leading `-`, so
+systemd doesn't fail to load it if this step hasn't run yet — matching the
+"keep restarting" behavior from step 4.)
+
+The file is owned by `tam-deploy`, not `root`: the deploy workflow (running
+as `tam-deploy` over SSH) reads it to apply migrations before each release
+(see below). This doesn't widen the secret's exposure — `tam-deploy` already
+controls the systemd service that reads this same value on every restart.
+
+## Migrations run automatically on deploy
+
+`.github/workflows/deploy-staging.yml` builds a self-contained EF Core
+migrations bundle (no .NET SDK needed on the server) and runs it against
+`/etc/trento-amodo-api/environment`'s connection string before swapping in
+the new release. It's safe on every push to `main`, migration or not — EF
+Core skips what's already applied.
+
+## Accessing the staging DB from your IDE
+
+The database is not exposed publicly, so use an SSH tunnel instead of opening
+a port. From your machine (replace `<ssh-user>` and `<staging-host>`; pick a
+free local port, e.g. `5434`, if you already have a local Postgres on 5432):
+
+```sh
+ssh -L 5434:localhost:5432 <ssh-user>@<staging-host>
+```
+
+Keep that session open, then point your IDE's database tool at
+`localhost:5434` with the same `trento_amodo`/`<strong-password>` credentials
+used above. Migrations themselves no longer need to be run this way — see
+above — but the tunnel is still useful to inspect data directly.
+
 ## GitHub secrets required
 
 Configured as organization secrets:

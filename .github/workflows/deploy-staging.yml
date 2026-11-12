@@ -29,7 +29,10 @@ jobs:
         run: echo "value=$(date -u +%Y%m%d)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore -r linux-x64
+
+      - name: Restore local tools
+        run: dotnet tool restore
 
       - name: Publish
         run: >
@@ -42,13 +45,27 @@ jobs:
       - name: Create release archive
         run: tar -czf "${{ env.ARTIFACT_NAME }}" -C publish .
 
-      - name: Upload archive to staging server
+      # Self-contained: applies migrations on the server without needing the
+      # .NET SDK there (only the ASP.NET Core runtime is installed, see
+      # deploy/SERVER_SETUP.md). Safe to run on every deploy, migration or
+      # not — it's a no-op against an already-up-to-date database.
+      - name: Build migrations bundle
+        run: >
+          dotnet tool run dotnet-ef migrations bundle
+          --project src/TrentoAmodo.Infrastructure
+          --startup-project src/TrentoAmodo.Api
+          --output efbundle
+          --self-contained
+          --runtime linux-x64
+          --force
+
+      - name: Upload archive and migrations bundle to staging server
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.T55_STAGING_DEPLOY_HOST }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.T55_STAGING_DEPLOY_KEY }}
-          source: ${{ env.ARTIFACT_NAME }}
+          source: "${{ env.ARTIFACT_NAME }},efbundle"
           target: /tmp
 
       - name: Release on staging server
@@ -63,6 +80,11 @@ jobs:
             VERSION="${{ steps.version.outputs.value }}"
             BASE_PATH="${{ env.DEPLOY_BASE_PATH }}"
             RELEASE_DIR="$BASE_PATH/releases/$VERSION"
+
+            CONNECTION_STRING="$(grep '^ConnectionStrings__Default=' /etc/trento-amodo-api/environment | cut -d= -f2-)"
+            chmod +x /tmp/efbundle
+            /tmp/efbundle --connection "$CONNECTION_STRING"
+            rm -f /tmp/efbundle
 
             mkdir -p "$RELEASE_DIR"
             tar -xzf "/tmp/${{ env.ARTIFACT_NAME }}" -C "$RELEASE_DIR"
