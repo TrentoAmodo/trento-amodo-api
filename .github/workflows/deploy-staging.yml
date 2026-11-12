@@ -34,6 +34,22 @@ jobs:
       - name: Restore local tools
         run: dotnet tool restore
 
+      # Self-contained: applies migrations on the server without needing the
+      # .NET SDK there (only the ASP.NET Core runtime is installed, see
+      # deploy/SERVER_SETUP.md). Safe to run on every deploy, migration or
+      # not — it's a no-op against an already-up-to-date database. Built
+      # before Publish: a plain `dotnet publish` re-restores the Api project
+      # without the linux-x64 RID and wipes it from project.assets.json.
+      - name: Build migrations bundle
+        run: >
+          dotnet tool run dotnet-ef migrations bundle
+          --project src/TrentoAmodo.Infrastructure
+          --startup-project src/TrentoAmodo.Api
+          --output efbundle
+          --self-contained
+          --runtime linux-x64
+          --force
+
       - name: Publish
         run: >
           dotnet publish "${{ env.PROJECT_PATH }}"
@@ -44,20 +60,6 @@ jobs:
 
       - name: Create release archive
         run: tar -czf "${{ env.ARTIFACT_NAME }}" -C publish .
-
-      # Self-contained: applies migrations on the server without needing the
-      # .NET SDK there (only the ASP.NET Core runtime is installed, see
-      # deploy/SERVER_SETUP.md). Safe to run on every deploy, migration or
-      # not — it's a no-op against an already-up-to-date database.
-      - name: Build migrations bundle
-        run: >
-          dotnet tool run dotnet-ef migrations bundle
-          --project src/TrentoAmodo.Infrastructure
-          --startup-project src/TrentoAmodo.Api
-          --output efbundle
-          --self-contained
-          --runtime linux-x64
-          --force
 
       - name: Upload archive and migrations bundle to staging server
         uses: appleboy/scp-action@v1
