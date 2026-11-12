@@ -8,6 +8,14 @@ ASP.NET Core Web API for the TrentoAmodo project.
 - Jira board: [TA](https://t55trentoamodo.atlassian.net/jira/software/projects/TA/boards/35)
 - GitHub organization: [TrentoAmodo](https://github.com/TrentoAmodo)
 
+## Running the API
+
+`TrentoAmodo.Api` is the only runnable project (the rest are class libraries), so it's always the entry point:
+
+- From the repo root: `dotnet run --project src/TrentoAmodo.Api`
+- From `src/TrentoAmodo.Api/`: `dotnet run`
+- HTTP only (port 5121): add `--launch-profile http`
+
 ## Local services
 
 Local development dependencies (Postgres, and future services such as cache or search) run via Docker Compose.
@@ -21,9 +29,13 @@ Local development dependencies (Postgres, and future services such as cache or s
 The API connects to Postgres through `TrentoAmodo.Infrastructure` (the persistence adapter), using EF Core with a code-first workflow.
 
 1. Restore the local tool (`dotnet-ef`): `dotnet tool restore`
-2. Set your local connection string via .NET User Secrets (matches the values in your `.env`), from `src/TrentoAmodo.Api`:
-   ```
-   dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Port=5433;Database=trento_amodo;Username=trento_amodo;Password=<your-password>"
+2. Create `src/TrentoAmodo.Api/appsettings.Development.Local.json` (gitignored, overrides other `appsettings*.json`) with your connection string, matching the values in your `.env`:
+   ```json
+   {
+     "ConnectionStrings": {
+       "Default": "Host=localhost;Port=5433;Database=trento_amodo;Username=trento_amodo;Password=<your-password>"
+     }
+   }
    ```
 3. Apply migrations to your local database: `dotnet tool run dotnet-ef database update --project src/TrentoAmodo.Infrastructure --startup-project src/TrentoAmodo.Api`
 

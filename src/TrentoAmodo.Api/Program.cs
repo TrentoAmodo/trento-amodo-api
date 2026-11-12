@@ -2,6 +2,9 @@ using TrentoAmodo.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Gitignored, developer-local override (connection strings, etc.) — takes precedence over appsettings.*.json.
+builder.Configuration.AddJsonFile("appsettings.Development.Local.json", optional: true, reloadOnChange: true);
+
 // Add services to the container.
 
 builder.Services.AddControllers();
